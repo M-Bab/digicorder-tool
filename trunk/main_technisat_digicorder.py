@@ -1,87 +1,21 @@
 #!/usr/bin/env python
+from mako.filters import trim
+
+#from apport.hookutils import default
 
 TCP_IP = '192.168.3.2'
 
 from technisat_digicorder_comm import digicorder_comm
 from optparse import OptionParser
-import os
-import fnmatch
-import tempfile
-import sys
-import time
+from technisat_digicorder_fileops import *
 from ffmpeg import FFMPEG
 from subprocess import Popen
 from subprocess import PIPE
-
-
-def construct_abs_path(main, localpath):
-    constructed_path = None
-    if (main):
-        if (os.path.isabs(main)):
-            constructed_path = main
-        else:
-            if (localpath):
-                constructed_path = os.path.join(os.path.abspath(localpath), main)
-            else:
-                constructed_path = os.path.join(os.path.curdir, main)
-    else:
-        if (localpath):
-            constructed_path = os.path.abspath(localpath)
-        else:
-            constructed_path = os.path.curdir
-    if (not os.path.isdir(constructed_path)):
-        constructed_path = os.path.dirname(constructed_path)
-    return(constructed_path)
-
-def retrieve_sorted_file_list(directory, pattern):
-    matched_files = []
-    filelist = os.listdir(directory)
-    for single_file in sorted(filelist, cmp=lambda x,y: cmp(x.lower(), y.lower())):
-        if fnmatch.fnmatch(single_file, pattern):
-            matched_files.append(os.path.join(directory, single_file))
-    return(matched_files)
-
-def combine_files(file_list, target_file_handle, buffer_size=1048576):
-    total_file_size = 0
-    iteration_index = 0
-    for input_file_name in file_list:
-        total_file_size += os.path.getsize(input_file_name)
-    for input_file_name in file_list:
-        input_file = file(input_file_name,'rb')
-        while True:
-            data = input_file.read(buffer_size)
-            if not data:
-                break
-            target_file_handle.write(data)
-            iteration_index += 1
-            update_progress(iteration_index*buffer_size/float(total_file_size))
-        input_file.close()
-        sys.stdout.write('\n')
-        
-def update_progress(progress):
-    if(progress > 1.0):
-        progress = 1.0
-    sys.stdout.write('\r[{0:20}] {1}%'.format('#'*(int(progress*100)/5), int(progress*100)))
-    sys.stdout.flush()
-
-def construct_ffmpeg_arguments(inputfilename, outputfilename, metadata, noac3=False):
-    args = ['-y', '-i', inputfilename]
-    args += ['-map']
-    args += [metadata.video_streams[0].stream_id]
-    audiostreams_count = 0
-    for audiostream in metadata.audio_streams:
-        if (not (noac3 and audiostream.codec == 'ac3')):
-            args += ['-map']
-            args += [audiostream.stream_id]
-            audiostreams_count += 1
-    args += ['-f', 'matroska', '-vcodec', 'copy', '-acodec', 'copy', outputfilename]
-    for index_number in range(1, audiostreams_count):
-        args += ['-acodec', 'copy', '-newaudio']
-    return(args)
+import tempfile
 
 def main():
     parser = OptionParser(version="%prog 0.1", usage="%prog [OPTIONS] [ELEMENT(S)]")
-    parser.add_option("-c", "--cd", dest="cd", metavar="DIRECTORY", help="Change DIGICORDER directory before executing 'list', 'get' or 'put'.")
+    parser.add_option("-c", "--cd", dest="cd", metavar="DIRECTORY", default='', help="Change DIGICORDER directory before executing 'list', 'get' or 'put'.")
     parser.add_option("-l", "--list", dest="list", action="store_true", default=False, help="List directories/objects on DIGICORDER in current directory")
     parser.add_option("-g", "--get", dest="get", action="store_true", default=False, help="Download ELEMENT(S) FROM DIGICORDER current directory TO CWD or specified local directory.")
     parser.add_option("-p", "--put", dest="put", action="store_true", default=False, help="Upload ELEMENT(S) which is a subdirectory IN CWD or specified local directory TO DIGICORDER current directory.")
@@ -97,6 +31,24 @@ def main():
     if (options.cd or options.list or options.get or options.put):
         my_digi_comm = digicorder_comm(TCP_IP)
         my_digi_comm.connect()
+        
+        my_digi_comm.cdlist(options.list, options.cd)
+        
+        if (options.get and options.put):
+            print 'Get and Put are optionally exclusive - either use get to download elements from digicorder or put to upload elements to digicorder'
+            exit(-1)
+        
+        if options.get:
+            if elements[0] == '+':
+                pass
+            else:
+                for single_element in elements:
+                    datei = file('./get.dat', 'wb')
+                    #my_digi_comm.downloadelementtosinglefile(single_element, datei)
+                    my_digi_comm.downloadelement(single_element, construct_abs_path(None , options.local_directory))
+        
+        if options.put:
+            pass
         
         my_digi_comm.disconnect()
         
@@ -162,8 +114,6 @@ def main():
                 for filename in log_files:
                     os.remove(filename)
                 
-#TCP_IP = '192.168.3.2'
-#
 #my_digi_comm = digicorder_comm(TCP_IP)
 #file = open('reallybigfilm.dat', 'wb', my_digi_comm.get_buffer_size())
 #
