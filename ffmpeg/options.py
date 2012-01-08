@@ -1,5 +1,10 @@
-import os
+'''
+This code is a modified version of the "pyxcoder" by james.townson 
+who I want to thank for his MIT-license-code in this Aknowledgement.
+More information on google code: http://code.google.com/p/pyxcoder/
 
+@author: james.townson, babutzka
+'''
 
 class Options:
 	format = None
