@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-from mako.filters import trim
-
-#from apport.hookutils import default
 
 TCP_IP = '192.168.3.2'
 
@@ -39,14 +36,10 @@ def main():
             exit(-1)
         
         if options.get:
-            if elements[0] == '+':
+            if elements[0] == '+' and len(elements) == 1:
                 pass
-            else:
-                for single_element in elements:
-                    datei = file('./get.dat', 'wb')
-                    #my_digi_comm.downloadelementtosinglefile(single_element, datei)
-                    my_digi_comm.downloadelement(single_element, construct_abs_path(None , options.local_directory))
-        
+            for single_element in elements:
+                my_digi_comm.downloadelement(single_element, construct_abs_path(None , options.local_directory))
         if options.put:
             pass
         
@@ -114,18 +107,6 @@ def main():
                 for filename in log_files:
                     os.remove(filename)
                 
-#my_digi_comm = digicorder_comm(TCP_IP)
-#file = open('reallybigfilm.dat', 'wb', my_digi_comm.get_buffer_size())
-#
-#my_digi_comm.connect()
-#print 'Root directories: '
-##file.write(my_digi_comm.listelementsraw("recordings"))
-#my_digi_comm.listelements("recordings")
-#print my_digi_comm.downloadelementtofile(13, file)
-#
-#my_digi_comm.disconnect()
-#file.close()
-
 
 if __name__ == "__main__":
     main()

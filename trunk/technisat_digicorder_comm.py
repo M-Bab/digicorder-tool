@@ -89,7 +89,7 @@ class digicorder_comm:
     def listrootdirectoriesraw(self):
         self.rootdirectoriesrawstring = self.send_and_receive('\x03\x00\x00')
         self.send_ack()
-        print self.rootdirectoriesrawstring
+        #print self.rootdirectoriesrawstring
         return(self.rootdirectoriesrawstring)
     def listelementsraw(self, directoryname):
         self.elementsstring = ''
@@ -100,10 +100,10 @@ class digicorder_comm:
         retemp = self.send_ack()
         if len(retemp) > 4:
             self.elementsstring = retemp
-        print self.elementsstring
+        #print self.elementsstring
         return(self.elementsstring)
     def cdlist(self, list, directoryname):
-        self.listrootdirectoriesraw()
+        self.listrootdirecltoriesraw()
         self.listrootdirectories()
         if directoryname != '':
             self.listelementsraw(directoryname)
@@ -112,7 +112,6 @@ class digicorder_comm:
             if directoryname == '':
                 self.printrootdirectories()
             else:
-
                 self.printlistelements(directoryname)
     def downloadelement(self, filmnumber, targetdirectory):
         self.socket.settimeout(10)
@@ -149,14 +148,15 @@ class digicorder_comm:
         while True:
             actual_filetype = ord(self.receive(1))
             if actual_filetype == 255:
+                print 'Download completed successfully'
                 break
             self.receive(4)
             filepart_size = ord(self.response[0])*256*256*256+ord(self.response[1])*256*256+ord(self.response[2])*256+ord(self.response[3])
             divider_check = self.receive(3)
             
-            print divider_check
-            print actual_filetype
-            print filepart_size
+            if divider_check != '***':
+                print 'Consistency check failed. Download aborted.'
+                break
             
             download_buffer = self.receive(filepart_size)
             filelist[actual_filetype].write(download_buffer)
@@ -164,7 +164,7 @@ class digicorder_comm:
         for single_file in filelist:
             single_file.close()
         
-        print 'Download completed successfully'
+
         self.socket.settimeout(0.5)
         
     def downloadelementtosinglefile(self, filmnumber, filehandle):
