@@ -14,8 +14,8 @@ def main():
     parser = OptionParser(version="%prog 0.1", usage="%prog [OPTIONS] [ELEMENT(S)]")
     parser.add_option("-c", "--cd", dest="cd", metavar="DIRECTORY", default='', help="Change DIGICORDER directory before executing 'list', 'get' or 'put'.")
     parser.add_option("-l", "--list", dest="list", action="store_true", default=False, help="List directories/objects on DIGICORDER in current directory")
-    parser.add_option("-g", "--get", dest="get", action="store_true", default=False, help="Download ELEMENT(S) FROM DIGICORDER current directory TO CWD or specified local directory.")
-    parser.add_option("-p", "--put", dest="put", action="store_true", default=False, help="Upload ELEMENT(S) which is a subdirectory IN CWD or specified local directory TO DIGICORDER current directory.")
+    parser.add_option("-g", "--get", dest="get", action="store_true", default=False, help="Download ELEMENT(S) FROM DIGICORDER current directory TO CWD or specified local directory. Use \"+\" to download all elements.")
+    parser.add_option("-p", "--put", dest="put", action="store_true", default=False, help="Upload ELEMENT(S) given as paths/directories TO DIGICORDER current directory. Usage of wildcards is possible.")
     parser.add_option("--localdirectory", dest="local_directory", metavar="DIRECTORY", help="Local destination/source directory for get/put, otherwise CWD is used")
     # parser.add_option("--overwrite", dest="overwrite", action="store_true", default=False, help="Overwrite element if changed")
     parser.add_option("--ts4tomkv", dest="convert_ts4tomkv", action="store_true", default=False, help="Convert HD ELEMENT which is a subdirectory IN CWD or specified local directory to mkv video. Requires ffmpeg with extensions.")
@@ -41,6 +41,7 @@ def main():
             for single_element in elements:
                 my_digi_comm.downloadelement(single_element, construct_abs_path(None , options.local_directory))
         if options.put:
+            print 'Upload via put is not yet implemented.'
             pass
         
         my_digi_comm.disconnect()
