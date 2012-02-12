@@ -12,24 +12,30 @@ directory = collections.namedtuple('directory','name, unknownint')
 filetype = collections.namedtuple('filetype','id, extension')
 
 class digicorder_comm:
-    def __init__(self, a_tcp_adress, a_tcp_port = 2376, a_buffer_size = 8192):
+    def __init__(self, a_tcp_adress, a_tcp_port = 2376, a_buffer_size = 8192, a_timeout = 10):
         self.tcp_adress = a_tcp_adress
         self.tcp_port = a_tcp_port
         self.buffer_size = a_buffer_size
+        self.timeout = a_timeout
     def get_buffer_size(self):
         return(self.buffer_size)
     def get_tcp_port(self):
         return(self.tcp_port)
     def connect(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.settimeout(5)
+        self.socket.settimeout(self.timeout)
         self.socket.connect((self.tcp_adress, self.tcp_port))
-        self.socket.settimeout(0.5)
-        self.send_ack()
-        rehello = self.send_and_receive('\x02')
-        if rehello:
-            print 'Technisat Digicorder responded with: ' + rehello
-        self.send_ack()
+        self.send_ack(1)
+        self.send('\x02')
+        while ord(self.receive(1)) == 1:
+            pass
+        version = ord(self.response)
+        lang_count = ord(self.receive(1))
+        lang = self.receive(lang_count)
+        modelname_count = ord(self.receive(1))
+        model = self.receive(modelname_count)
+        print 'Connected to model ' + model + ' (language=' + lang + ', version=' + version + ')'
+        self.send_ack(0)
     def disconnect(self):
         self.socket.close()
     def send(self, command):
@@ -48,21 +54,26 @@ class digicorder_comm:
         except socket.timeout:
             print "Socket timeout (" + str(self.socket.timeout) + ") while receiving after " + received_bytes + " Bytes!"
         return(self.response)
-    def send_and_receive(self, command):
-        self.response = ''
-        self.socket.send(command)
-        while True:
-            self.data = ""
-            try:
-                self.data = self.socket.recv(self.buffer_size)
-                self.response += self.data
-            except socket.timeout:
-                if self.data:
+    def send_and_receive(self, command, nbytes=-1):
+        if nbytes == -1:
+            self.socket.settimeout(0.5)
+            self.response = ''
+            self.socket.send(command)
+            while True:
+                self.data = ""
+                try:
+                    self.data = self.socket.recv(self.buffer_size)
                     self.response += self.data
-                break
+                except socket.timeout:
+                    if self.data:
+                        self.response += self.data
+                    break
+            self.socket.settimeout(self.timeout)
+        else:
+            self.send(command)
+            self.receive(nbytes)
         return(self.response)
     def send_and_receive_to_file(self, command, filehandle):
-        self.socket.settimeout(10)
         self.socket.send(command)
         while True:
             self.data = ""
@@ -73,23 +84,18 @@ class digicorder_comm:
                 if self.data:
                     filehandle.write(self.data)
                 break
-        self.socket.settimeout(0.5)
-    def send_ack(self, ntimes = 1):
+    def send_ack(self, nbytes = -1):
         self.reack = ''
-        for self.i in range(0, ntimes):
+        if nbytes == -1:
             retemp = self.send_and_receive('\x01')
             if retemp <> '\x01':
-##                print 'Warning, Technisat did not react on ack-package!'
-##                sys.exit(-1)
-##            print self.reack
                 self.reack += retemp
+        else:
+            self.reack = self.send_and_receive('\x01', nbytes)
         return(self.reack)
-    def create_film_files_from_raw(self):
-        pass
     def listrootdirectoriesraw(self):
         self.rootdirectoriesrawstring = self.send_and_receive('\x03\x00\x00')
         self.send_ack()
-        #print self.rootdirectoriesrawstring
         return(self.rootdirectoriesrawstring)
     def listelementsraw(self, directoryname):
         self.elementsstring = ''
@@ -100,10 +106,9 @@ class digicorder_comm:
         retemp = self.send_ack()
         if len(retemp) > 4:
             self.elementsstring = retemp
-        #print self.elementsstring
         return(self.elementsstring)
     def cdlist(self, list, directoryname):
-        self.listrootdirecltoriesraw()
+        self.listrootdirectoriesraw()
         self.listrootdirectories()
         if directoryname != '':
             self.listelementsraw(directoryname)
@@ -114,7 +119,6 @@ class digicorder_comm:
             else:
                 self.printlistelements(directoryname)
     def downloadelement(self, filmnumber, targetdirectory):
-        self.socket.settimeout(10)
         self.filetypeslist = []
         
         self.send('\x05\x00' + chr(int(filmnumber)) + '\x00\x00\x00\x00\x00\x00\x00\x00')
@@ -163,9 +167,6 @@ class digicorder_comm:
                     
         for single_file in filelist:
             single_file.close()
-        
-
-        self.socket.settimeout(0.5)
         
     def downloadelementtosinglefile(self, filmnumber, filehandle):
         self.downloaddescription = self.send_and_receive('\x05\x00' + chr(int(filmnumber)) + '\x00\x00\x00\x00\x00\x00\x00\x00')
