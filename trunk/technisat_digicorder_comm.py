@@ -1,4 +1,7 @@
-# class Technisat Digicorder communication protocoll
+# -*- coding: iso-8859-1 -*-
+'''
+class Technisat Digicorder communication protocoll
+'''
 
 import socket
 import collections
@@ -10,6 +13,8 @@ import os
 filmelement = collections.namedtuple('filmelement','name, number, type, seenflag, size, date')
 directory = collections.namedtuple('directory','name, unknownint')
 filetype = collections.namedtuple('filetype','id, extension')
+
+debugging_mode = 1
 
 class digicorder_comm:
     def __init__(self, a_tcp_adress, a_tcp_port = 2376, a_buffer_size = 8192, a_timeout = 10):
@@ -34,11 +39,20 @@ class digicorder_comm:
         lang = self.receive(lang_count)
         modelname_count = ord(self.receive(1))
         model = self.receive(modelname_count)
-        print 'Connected to model ' + model + ' (language=' + lang + ', version=' + version + ')'
+        print 'Connected to model ' + model + ' (language=' + lang + ', version=' + str(version) + ')'
         self.send_ack(0)
+    def debugprint(self, pretext, content):
+        print pretext
+        index = 0
+        for index in range(0, len(content), 15):
+            partstring = content[index:index+15]
+            hexstring = ' '.join(["%02X"%ord(singlebyte) for singlebyte in partstring])
+            print hexstring + ' | ' + partstring
     def disconnect(self):
         self.socket.close()
     def send(self, command):
+        if debugging_mode == 1:
+            self.debugprint('Sending:', command)
         self.socket.send(command)
     def receive(self, nbytes):
         self.response = ''
@@ -53,11 +67,15 @@ class digicorder_comm:
                 received_bytes = len(self.response)
         except socket.timeout:
             print "Socket timeout (" + str(self.socket.timeout) + ") while receiving after " + received_bytes + " Bytes!"
+        if debugging_mode == 1:
+            self.debugprint('Received:', self.response)
         return(self.response)
     def send_and_receive(self, command, nbytes=-1):
         if nbytes == -1:
             self.socket.settimeout(0.5)
             self.response = ''
+            if debugging_mode == 1:
+                self.debugprint('Sending:', command)
             self.socket.send(command)
             while True:
                 self.data = ""
@@ -68,6 +86,8 @@ class digicorder_comm:
                     if self.data:
                         self.response += self.data
                     break
+            if debugging_mode == 1:
+                self.debugprint('Sending:', self.response)
             self.socket.settimeout(self.timeout)
         else:
             self.send(command)
@@ -93,10 +113,6 @@ class digicorder_comm:
         else:
             self.reack = self.send_and_receive('\x01', nbytes)
         return(self.reack)
-    def listrootdirectoriesraw(self):
-        self.rootdirectoriesrawstring = self.send_and_receive('\x03\x00\x00')
-        self.send_ack()
-        return(self.rootdirectoriesrawstring)
     def listelementsraw(self, directoryname):
         self.elementsstring = ''
         self.send_and_receive('\x03\x00\x01')
@@ -108,7 +124,6 @@ class digicorder_comm:
             self.elementsstring = retemp
         return(self.elementsstring)
     def cdlist(self, list, directoryname):
-        self.listrootdirectoriesraw()
         self.listrootdirectories()
         if directoryname != '':
             self.listelementsraw(directoryname)
@@ -177,28 +192,24 @@ class digicorder_comm:
         return(self.downloaddescription)
     def listrootdirectories(self):
         self.directorieslist = []
-        start = 0
-        if ord(self.rootdirectoriesrawstring[start]) == 1: 
-            start += 1
-        if ord(self.rootdirectoriesrawstring[start]) == 0:
-            start += 1
-        self.numberofdirectories = ord(self.rootdirectoriesrawstring[start])
-        start += 1
+
+        self.send('\x03\x00\x00')
+        self.receive(1)
+        self.send_ack(1)
         
+        if ord(self.receive(1)) == 0:
+            self.receive(1)
+        self.numberofdirectories = ord(self.response)
+
         name = ''; unknownint = 0;
         for i in range(0, self.numberofdirectories):
-            pos = 0
-        
-            unknownint = 256*ord(self.rootdirectoriesrawstring[start+pos])+ord(self.rootdirectoriesrawstring[start+pos+1])
-            pos += 2
+            self.receive(2)
+            unknownint = 256*ord(self.response[1])+ord(self.response[0])
             
-            namelength = ord(self.rootdirectoriesrawstring[start+pos])
-            pos += 1
+            namelength = ord(self.receive(1))
             
-            name = self.rootdirectoriesrawstring[start+pos:start+pos+namelength]
-            pos += namelength
-            
-            start += pos
+            name = (self.receive(namelength))
+
             singledirectory = directory(name, unknownint)
             self.directorieslist.append(singledirectory)
             name = ''; unknownint = 0;
