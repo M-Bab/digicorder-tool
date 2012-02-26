@@ -1,4 +1,3 @@
-# -*- coding: iso-8859-1 -*-
 '''
 class Technisat Digicorder communication protocoll
 '''
@@ -14,7 +13,7 @@ filmelement = collections.namedtuple('filmelement','name, number, type, seenflag
 directory = collections.namedtuple('directory','name, unknownint')
 filetype = collections.namedtuple('filetype','id, extension')
 
-debugging_mode = 1
+debugging_mode = 0
 
 class digicorder_comm:
     def __init__(self, a_tcp_adress, a_tcp_port = 2376, a_buffer_size = 8192, a_timeout = 10):
@@ -29,7 +28,11 @@ class digicorder_comm:
     def connect(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.settimeout(self.timeout)
-        self.socket.connect((self.tcp_adress, self.tcp_port))
+        try:
+            self.socket.connect((self.tcp_adress, self.tcp_port))
+        except:
+            print "Failed to connect to Technisat. Ensure it is switched on, not busy and available under the given ip address: " + self.tcp_adress
+            sys.exit(-1)
         self.send_ack(1)
         self.send('\x02')
         while ord(self.receive(1)) == 1:
@@ -66,7 +69,7 @@ class digicorder_comm:
                 self.response += self.socket.recv(maxbuffer)
                 received_bytes = len(self.response)
         except socket.timeout:
-            print "Socket timeout (" + str(self.socket.timeout) + ") while receiving after " + received_bytes + " Bytes!"
+            print "Socket timeout (" + str(self.socket.gettimeout()) + ") while receiving after " + str(received_bytes) + " Bytes!"
         if debugging_mode == 1:
             self.debugprint('Received:', self.response)
         return(self.response)
@@ -126,7 +129,6 @@ class digicorder_comm:
     def cdlist(self, list, directoryname):
         self.listrootdirectories()
         if directoryname != '':
-            self.listelementsraw(directoryname)
             self.listelements(directoryname)
         if list:
             if directoryname == '':
@@ -208,7 +210,7 @@ class digicorder_comm:
             
             namelength = ord(self.receive(1))
             
-            name = (self.receive(namelength))
+            name = (self.receive(namelength)).decode("iso-8859-15").encode(sys.getfilesystemencoding())
 
             singledirectory = directory(name, unknownint)
             self.directorieslist.append(singledirectory)
@@ -222,70 +224,71 @@ class digicorder_comm:
         
     def listelements(self, directoryname):
         self.filmlist = []
-        start = 0
-        #print self.elementsstring
-        if ord(self.elementsstring[start]) == 1: 
-            start += 1
-        if ord(self.elementsstring[start]) == 0:
-            start += 1
-        self.numberoffilms = ord(self.elementsstring[start])
-        start += 1
+        
+        self.send_and_receive('\x03\x00\x01', 1)
+        self.send_and_receive(directoryname, 1)
+        self.send_ack(1)
+        
+        if ord(self.receive(1)) == 1: 
+            if ord(self.receive(1)) == 0:
+                pass
+            else:
+                self.debugprint("Unexpected listelements reply", self.response)
+        else:
+                if ord(self.receive(1)) == 0:
+                    pass
+        self.numberoffilms = ord(self.receive(1))
 
 ##       typeset = 0; numberset = 0; namelengthset = 0; seenset = 0; nameset = 0; sizeset = 0; dateset = 0
         name = ''; number = 0; type = ''; seenflag = 0; size = 0; date = 0; namelength = 0
         for i in range(0,self.numberoffilms):
-            pos = 0
-            if ord(self.elementsstring[start+pos]) == 4:
+            self.receive(1)
+            if ord(self.response) == 4:
                 type = 'MPEG SD'
-            elif ord(self.elementsstring[start+pos]) == 7:
+            elif ord(self.response) == 7:
                 type = 'MPEG HD'
             else:
-                print "Unknown file type " + self.elementsstring[start+pos] + " at position " + str(start+pos)
+                print "Unknown file type " + self.response + " at Filmelement " + i 
                 sys.exit(-1)
-            pos += 1
             
-            number = 256*ord(self.elementsstring[start+pos])+ord(self.elementsstring[start+pos+1])
-            pos += 2
+            self.receive(2)
+            number = 256*ord(self.response[0])+ord(self.response[1])
             
-            namelength = ord(self.elementsstring[start+pos])
-            pos += 1
+            namelength = ord(self.receive(1))-1
             
-            if ord(self.elementsstring[start+pos]) == 5:
+            self.receive(1)
+            if ord(self.response) == 5:
                 seenflag = 0
-            elif ord(self.elementsstring[start+pos]) == 11:
+            elif ord(self.response) == 11:
                 seenflag = 1
             else:
-                print "Unknown seen flag " + self.elementsstring[start+pos] + " at position " + str(start+pos)
+                print "Unknown seen flag " + ord(self.response) + " at film element " + i
                 sys.exit(-1)
-            pos += 1
             
-            name = self.elementsstring[start+pos:start+pos+namelength-1]
-            pos += namelength-1
+            name = (self.receive(namelength)).decode("iso-8859-15").encode(sys.getfilesystemencoding())
             
-            if (ord(self.elementsstring[start+pos]) + ord(self.elementsstring[start+pos+1]) + ord(self.elementsstring[start+pos+1]) ) > 0:
-                print "Structure failure at position " + str(start+pos) + " only zeros expected!"
+            self.receive(3)
+            if (ord(self.response[0]) + ord(self.response[1]) + ord(self.response[2]) ) > 0:
+                print "Structure failure at film number " + i + " only zeros expected!"
                 sys.exit(-1)
-            pos += 3
             
-            size = (ord(self.elementsstring[start+pos])*256*256+ord(self.elementsstring[start+pos+1])*256+ord(self.elementsstring[start+pos+2]))/16.
-            pos += 3
+            self.receive(3)
+            size = (ord(self.response[0])*256*256+ord(self.response[1])*256+ord(self.response[2]))/16.
             
-            if (ord(self.elementsstring[start+pos]) + ord(self.elementsstring[start+pos+1]) ) > 0:
-                print "Structure failure at position " + str(start+pos) + " only zeros expected!"
+            self.receive(2)
+            if (ord(self.response[0]) + ord(self.response[1]) ) > 0:
+                print "Structure failure at film number " + i + " only zeros expected!"
                 sys.exit(-1)
-            pos += 2
             
             # Timestamp corresponds to 1.1.2000 00:00:00 = 946681200 s since 1970
-            timestamp = ord(self.elementsstring[start+pos])*256*256*256+ord(self.elementsstring[start+pos+1])*256*256
-            timestamp += ord(self.elementsstring[start+pos+2])*256+ord(self.elementsstring[start+pos+3])
+            self.receive(4)
+            timestamp = ord(self.response[0])*256*256*256+ord(self.response[1])*256*256
+            timestamp += ord(self.response[2])*256+ord(self.response[3])
             reference_datetime = datetime.datetime(2000, 1, 1, 0, 0, 0)
             
             date = datetime.datetime.fromtimestamp(int(timestamp)+int(reference_datetime.strftime("%s"))+time.timezone)
-            pos += 4
 
-            start += pos
             film = filmelement(name, number, type, seenflag, size, date)
-            ##print film
             self.filmlist.append(film)
             name = ''; number = 0; type = ''; seenflag = 0; size = 0; date = 0; namelength = 0
         return(self.filmlist)
