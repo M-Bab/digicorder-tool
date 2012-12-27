@@ -1,0 +1,53 @@
+Technisat Digicorder Communicator and Transcoder
+
+A python tool for downloading/uploading files from/to a Technisat Digicorder and fast and lossless transcoding of mpeg-ts.
+
+Detailed description:
+This python-based command line tool allows download & upload of recorded videos from/to a Technisat Digicorder via network
+
+Additionally it allows a fast and lossless conversion of the .ts-files to DVD-compatible .mpg-files (using projectx and mplex) and the .ts4 HD-videos to 
+.mkv-files which can be read by any DivX-Plus compatible device (using ffmpeg). The file transcoding functionality is independent from the Technisat functionality
+and should work with any SD (which is typically a mpeg2 in mpeg-ts container) or HD (which is typically H264/AVC in mpeg-ts container) digital TV stream.  
+
+If you have questions don't hesitate to contact me (in English or German)
+
+Requirements:
+* Python 2.7
+For transcoding
+* ffmpeg available in system PATH
+* projectx available in system PATH
+* mplex available in system PATH
+
+Installation:
+* Simply unpack it to a preferred destination
+* On Linux its recommended to activate the execution bit on main_technisat_digicorder.py
+* On Linux/Windows it can be helpful to make main_technisat_digicorder.py available in the system PATH
+
+Configuration:
+* Set the correct ip-address of the Technisat Digicorder in the 3rd line of main_technisat_digicorder.py (This will be replaced by a config file in the near future)
+
+Execute/examples (">" indicates a command line interface):
+* > main_technisat_digicorder.py --help
+	Gives you information about available options
+* > main_technisat_digicorder.py --list
+	Connects to the digicorder and lists the available main directories
+* > main_technisat_digicorder.py --list --cd recordings
+	Connects to the digicorder and lists all elements available in the folder "recordings" = Lists all recordings
+* > main_technisat_digicorder.py --get 3 --localdirectory=/home/peter/video
+	Downloads the element ID=3 (you get the ID with the list command above) to the local directory /home/peter/video
+* > main_technisat_digicorder.py --ts4tomkv /home/peter/video/bigbangtheory
+	Transcodes the .ts4 files (HD-video recording) in /home/peter/video/bigbangtheory to an .mkv in the same directory
+* > main_technisat_digicorder.py --tstompg *
+	Wildcard expansion of course also works: This transcodes all .ts files to .mpg files in all subdirectories of your current directory
+
+Todo:
+* More feedback/progress indicators when downloading/transcoding
+* Upload files to technisat
+* Delete files on technisat
+* Configuration file for Technisat ip and location of ffmpeg, projectx and mplex binaries
+
+Changelog:
+0.2.2: Allowed unknown file types for Digicorder S2
+0.2.1: Small bugfixes (Concat error on combining string and numbers)
+0.2: Improved speed and stability by following the protocoll more strictly. Added iso-8859-15 encoding - allows special characters now.
+0.1: First release
