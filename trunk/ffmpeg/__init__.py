@@ -18,7 +18,7 @@ BUF_SIZE = 4096
 
 
 class FFMPEG:
-	def __init__(self, ffmpeg='ffmpeg'):
+	def __init__(self, ffmpeg=['ffmpeg']):
 		self.ffmpeg = ffmpeg
 		
 	def get_metadata(self, input_filename):
@@ -35,7 +35,7 @@ class FFMPEG:
 		print self.exec_ffmpeg(args)[1].read()
 	
 	def exec_ffmpeg(self, args):
-		args = [self.ffmpeg] + args
+		args = self.ffmpeg + args
 		try:
 			p = Popen(args, shell=False, bufsize=BUF_SIZE, stderr=PIPE, stdout=PIPE)
 			output, errors = p.communicate()

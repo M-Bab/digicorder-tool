@@ -27,6 +27,9 @@ def construct_abs_path(main, localpath):
         constructed_path = os.path.dirname(constructed_path)
     return(constructed_path)
 
+def construct_maindir_path(filename):
+    return(os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])),filename))
+
 def retrieve_sorted_file_list(directory, pattern):
     matched_files = []
     filelist = os.listdir(directory)

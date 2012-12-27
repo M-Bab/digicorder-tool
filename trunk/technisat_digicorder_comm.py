@@ -13,14 +13,13 @@ filmelement = collections.namedtuple('filmelement','name, number, type, seenflag
 directory = collections.namedtuple('directory','name, unknownint')
 filetype = collections.namedtuple('filetype','id, extension')
 
-debugging_mode = 0
-
 class digicorder_comm:
-    def __init__(self, a_tcp_adress, a_tcp_port = 2376, a_buffer_size = 8192, a_timeout = 10):
+    def __init__(self, a_tcp_adress, a_debug_mode = False, a_tcp_port = 2376, a_buffer_size = 8192, a_timeout = 10):
         self.tcp_adress = a_tcp_adress
         self.tcp_port = a_tcp_port
         self.buffer_size = a_buffer_size
         self.timeout = a_timeout
+        self.debugging_mode = a_debug_mode
     def get_buffer_size(self):
         return(self.buffer_size)
     def get_tcp_port(self):
@@ -54,7 +53,7 @@ class digicorder_comm:
     def disconnect(self):
         self.socket.close()
     def send(self, command):
-        if debugging_mode == 1:
+        if self.debugging_mode == 1:
             self.debugprint('Sending:', command)
         self.socket.send(command)
     def receive(self, nbytes):
@@ -77,7 +76,7 @@ class digicorder_comm:
         if nbytes == -1:
             self.socket.settimeout(0.5)
             self.response = ''
-            if debugging_mode == 1:
+            if self.debugging_mode == 1:
                 self.debugprint('Sending:', command)
             self.socket.send(command)
             while True:
@@ -89,7 +88,7 @@ class digicorder_comm:
                     if self.data:
                         self.response += self.data
                     break
-            if debugging_mode == 1:
+            if self.debugging_mode == 1:
                 self.debugprint('Sending:', self.response)
             self.socket.settimeout(self.timeout)
         else:
@@ -135,6 +134,9 @@ class digicorder_comm:
                 self.printrootdirectories()
             else:
                 self.printlistelements(directoryname)
+    def downloadall(self, targetdirectory):
+        for film in self.filmlist:
+            self.downloadelement(film.number, targetdirectory)
     def downloadelement(self, filmnumber, targetdirectory):
         self.filetypeslist = []
         

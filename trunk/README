@@ -14,9 +14,9 @@ If you have questions don't hesitate to contact me (in English or German)
 Requirements:
 * Python 2.7
 For transcoding
-* ffmpeg available in system PATH
-* projectx available in system PATH
-* mplex available in system PATH
+* ffmpeg (ideally available in system PATH)
+* projectx (ideally available in system PATH)
+* mplex (ideally available in system PATH)
 
 Installation:
 * Simply unpack it to a preferred destination
@@ -24,7 +24,7 @@ Installation:
 * On Linux/Windows it can be helpful to make main_technisat_digicorder.py available in the system PATH
 
 Configuration:
-* Set the correct ip-address of the Technisat Digicorder in the 3rd line of main_technisat_digicorder.py (This will be replaced by a config file in the near future)
+* Set the correct options in the config-file "options.cfg"
 
 Execute/examples (">" indicates a command line interface):
 * > main_technisat_digicorder.py --help
@@ -44,9 +44,9 @@ Todo:
 * More feedback/progress indicators when downloading/transcoding
 * Upload files to technisat
 * Delete files on technisat
-* Configuration file for Technisat ip and location of ffmpeg, projectx and mplex binaries
 
 Changelog:
+0.2.3: Added configuration file
 0.2.2: Allowed unknown file types for Digicorder S2
 0.2.1: Small bugfixes (Concat error on combining string and numbers)
 0.2: Improved speed and stability by following the protocoll more strictly. Added iso-8859-15 encoding - allows special characters now.
