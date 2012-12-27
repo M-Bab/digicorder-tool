@@ -50,7 +50,8 @@ def combine_files(file_list, target_file_handle, buffer_size=1048576):
             iteration_index += 1
             update_progress(iteration_index*buffer_size/float(total_file_size))
         input_file.close()
-        sys.stdout.write('\n')
+    sys.stdout.write('\n')
+    target_file_handle.close()
         
 def update_progress(progress):
     if(progress > 1.0):
@@ -70,5 +71,6 @@ def construct_ffmpeg_arguments(inputfilename, outputfilename, metadata, noac3=Fa
             audiostreams_count += 1
     args += ['-f', 'matroska', '-vcodec', 'copy', '-acodec', 'copy', outputfilename]
     for index_number in range(1, audiostreams_count):
-        args += ['-acodec', 'copy', '-newaudio']
+#        args += ['-acodec', 'copy', '-newaudio'] # Removed newaudio - not required in recent ffmpeg versions
+        args += ['-acodec', 'copy']
     return(args)

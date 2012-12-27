@@ -42,7 +42,7 @@ class digicorder_comm:
         lang = self.receive(lang_count)
         modelname_count = ord(self.receive(1))
         model = self.receive(modelname_count)
-        print 'Connected to model ' + model + ' (language=' + lang + ', version=' + str(version) + ')'
+        print 'Connected to model ' + str(model) + ' (language=' + str(lang) + ', version=' + str(version) + ')'
         self.send_ack(0)
     def debugprint(self, pretext, content):
         print pretext
@@ -248,8 +248,9 @@ class digicorder_comm:
             elif ord(self.response) == 7:
                 type = 'MPEG HD'
             else:
-                print "Unknown file type " + self.response + " at Filmelement " + i 
-                sys.exit(-1)
+                type = 'Unknown'
+                print "Unknown file type " + str(ord(self.response)) + " at Filmelement " + str(i) 
+                #sys.exit(-1)
             
             self.receive(2)
             number = 256*ord(self.response[0])+ord(self.response[1])
@@ -262,14 +263,15 @@ class digicorder_comm:
             elif ord(self.response) == 11:
                 seenflag = 1
             else:
-                print "Unknown seen flag " + ord(self.response) + " at film element " + i
-                sys.exit(-1)
+                seenflag = 0
+                print "Unknown seen flag " + str(ord(self.response)) + " at film element " + str(i)
+                #sys.exit(-1)
             
             name = (self.receive(namelength)).decode("iso-8859-15").encode(sys.getfilesystemencoding())
             
             self.receive(3)
             if (ord(self.response[0]) + ord(self.response[1]) + ord(self.response[2]) ) > 0:
-                print "Structure failure at film number " + i + " only zeros expected!"
+                print "Structure failure at film number " + str(i) + " only zeros expected!"
                 sys.exit(-1)
             
             self.receive(3)
@@ -277,7 +279,7 @@ class digicorder_comm:
             
             self.receive(2)
             if (ord(self.response[0]) + ord(self.response[1]) ) > 0:
-                print "Structure failure at film number " + i + " only zeros expected!"
+                print "Structure failure at film number " + str(i) + " only zeros expected!"
                 sys.exit(-1)
             
             # Timestamp corresponds to 1.1.2000 00:00:00 = 946681200 s since 1970

@@ -36,10 +36,10 @@ class FFMPEG:
 	
 	def exec_ffmpeg(self, args):
 		args = [self.ffmpeg] + args
-		#print ' '.join(args)
 		try:
-			p = Popen(args, shell=False, bufsize=BUF_SIZE, stderr=PIPE, stdout=PIPE, close_fds=True)
+			p = Popen(args, shell=False, bufsize=BUF_SIZE, stderr=PIPE, stdout=PIPE)
+			output, errors = p.communicate()
 			p.wait()
 		except OSError:
 			print "OSError when calling \"ffmpeg\". Ensure \"ffmpeg\" is installed and available in PATH."
-		return (p.stdout, p.stderr)
+		return (output, errors)

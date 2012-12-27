@@ -31,9 +31,9 @@ class FFmpegMetadataParser:
 	# Duration: 00:51:31.9, start: 0.000000, bitrate: 348 kb/s
 	DURATION_PATTERN = re.compile(r'^\s*Duration: (.*?), start: (.*?), bitrate: (.*)$')
 	# Stream #0.0: Audio: mp3, 44100 Hz, stereo
-	AUDIO_STREAM_PATTERN = re.compile(r'^\s*Stream\s+#(\d+\.\d+).*:\s+Audio:(.*)$')
+	AUDIO_STREAM_PATTERN = re.compile(r'^\s*Stream\s+#(\d+\[.:]\d+).*:\s+Audio:(.*)$')
 	# Stream #0.1: Video: vp6f, yuv420p, 368x288,  0.17 fps(r)
-	VIDEO_STREAM_PATTERN = re.compile(r'^\s*Stream\s+#(\d+\.\d+).*:\s+Video:(.*)$')
+	VIDEO_STREAM_PATTERN = re.compile(r'^\s*Stream\s+#(\d+\[.:]\d+).*:\s+Video:(.*)$')
 
 	
 	def __init__(self, filelike):
