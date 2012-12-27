@@ -8,6 +8,7 @@ from technisat_digicorder_fileops import *
 from ffmpeg import FFMPEG
 from subprocess import Popen
 from subprocess import PIPE
+from shlex import split as procsplit
 import tempfile
 import ConfigParser
 
@@ -22,21 +23,29 @@ def main():
     parser.add_option("--ts4tomkv", dest="convert_ts4tomkv", action="store_true", default=False, help="Convert HD ELEMENT which is a subdirectory IN CWD or specified local directory to mkv video. Requires ffmpeg with extensions")
     parser.add_option("--tstompg", dest="convert_tstompg", action="store_true", default=False, help="Convert SD ELEMENT which is a subdirectory IN CWD or specified local directory to mpg video. Requires projectx and mplex")
     parser.add_option("--noac3", dest="convert_noac3", action="store_true", default=False, help="Drop existing ac3-audio streams when converting to mpg or mkv")
-    parser.add_option("--ip", dest="ip", metavar="123.123.123.123", help="IP address of the TechniSat if not given by the config file")
+    parser.add_option("--ip", dest="ip", metavar="123.123.123.123", help="IP address of the TechniSat overrides the config file")
     
     (options, args) = parser.parse_args()
     elements = args
     
     config = ConfigParser.RawConfigParser()
-    config.read('options.cfg')
+    config.read(construct_maindir_path('options.cfg'))
     
     if (options.cd or options.list or options.get or options.put):
         if (options.ip):
             TCP_IP = options.ip
-        else:
+        elif(config.get('main', 'TCP_IP')):
             TCP_IP = config.get('main', 'TCP_IP')
-            
-        my_digi_comm = digicorder_comm(TCP_IP)
+        else:
+            print 'No IP-Adress specified in CMD line or config file!'
+            exit(-1)
+        
+        if (config.get('main', 'DEBUG')):
+            digi_debug = config.get('main', 'DEBUG')
+        else:
+            digi_debug = False
+        
+        my_digi_comm = digicorder_comm(TCP_IP, digi_debug)
         my_digi_comm.connect()
         
         my_digi_comm.cdlist(options.list, options.cd)
@@ -47,7 +56,7 @@ def main():
         
         if options.get:
             if elements[0] == '+' and len(elements) == 1:
-                pass
+                my_digi_comm.downloadall(construct_abs_path(None , options.local_directory))
             for single_element in elements:
                 my_digi_comm.downloadelement(single_element, construct_abs_path(None , options.local_directory))
         if options.put:
@@ -65,9 +74,15 @@ def main():
                 print "Combining files in \"" + os.path.abspath(sourcedir) + "\" to temporary file " + combined_temporary_file.name
                 combine_files(sourcefiles, combined_temporary_file)
                 
-                xcoder = FFMPEG()
+                if (config.get('tools', 'FFMPEG_CMD')):
+                    xcoder = FFMPEG(procsplit(config.get('tools', 'FFMPEG_CMD')))
+                else:
+                    xcoder = FFMPEG()
                 metadata = xcoder.get_metadata(combined_temporary_file.name)
-                print os.path.basename(os.path.abspath(sourcedir))
+#                print os.path.basename(os.path.abspath(sourcedir))
+#                print metadata
+#                print metadata.video_streams
+#                print metadata.audio_streams
                 targetfile = os.path.join(sourcedir, (os.path.basename(os.path.abspath(sourcedir)) + ".mkv").replace(" ","_"))
                 ffmpeg_mkv_args = construct_ffmpeg_arguments(combined_temporary_file.name, targetfile, metadata, options.convert_noac3)
                 print "Converting files in \"" + os.path.abspath(sourcedir) + "\" to " + targetfile
@@ -85,7 +100,10 @@ def main():
                 print "Combining files in \"" + os.path.abspath(sourcedir) + "\" to temporary file " + combined_temporary_file.name
                 combine_files(sourcefiles, combined_temporary_file)
                 
-                args = ['projectx', combined_temporary_file.name]
+                if (config.get('tools', 'PROJECTX_CMD')):
+                    args = [procsplit(config.get('tools', 'PROJECTX_CMD')), combined_temporary_file.name]                
+                else:    
+                    args = ['projectx', combined_temporary_file.name]
                 try:
                     p = Popen(args, shell=False, stderr=PIPE, stdout=PIPE)
                     print "Demuxing video file with projectx"
@@ -105,7 +123,10 @@ def main():
                 
                 if (m2v_files):
                     targetfile = os.path.join(sourcedir, (os.path.basename(os.path.abspath(sourcedir)) + ".mpg").replace(" ","_"))
-                    mplex_command = ['mplex', '-f', '8', '-o', targetfile]
+                    if (config.get('tools', 'MPLEX_CMD')):
+                        mplex_command = [procsplit(config.get('tools', 'MPLEX_CMD')), '-f', '8', '-o', targetfile]
+                    else:
+                        mplex_command = ['mplex', '-f', '8', '-o', targetfile]
                     if(options.convert_noac3): mplex_command += ac3_files
                     mplex_command += m2v_files
                     mplex_command += mp2_files
