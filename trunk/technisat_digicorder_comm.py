@@ -69,7 +69,7 @@ class digicorder_comm:
                 received_bytes = len(self.response)
         except socket.timeout:
             print "Socket timeout (" + str(self.socket.gettimeout()) + ") while receiving after " + str(received_bytes) + " Bytes!"
-        if debugging_mode == 1:
+        if self.debugging_mode == 1:
             self.debugprint('Received:', self.response)
         return(self.response)
     def send_and_receive(self, command, nbytes=-1):
@@ -139,7 +139,7 @@ class digicorder_comm:
             self.downloadelement(film.number, targetdirectory)
     def downloadelement(self, filmnumber, targetdirectory):
         self.filetypeslist = []
-        
+        self.bytesdownloaded = 0
         self.send('\x05\x00' + chr(int(filmnumber)) + '\x00\x00\x00\x00\x00\x00\x00\x00')
         # ignore first 8 bytes
         self.receive(8)
@@ -167,12 +167,24 @@ class digicorder_comm:
         
         # Download!
         self.send('\x01')
-        
+         
         while True:
             actual_filetype = ord(self.receive(1))
             if actual_filetype == 255:
                 print 'Download completed successfully'
                 break
+	    if actual_filetype == 249:
+		n = 0 
+		while actual_filetype == 249:
+		  actual_filetype = ord(self.receive(1))
+                  sys.stdout.write('\r')
+	          sys.stdout.write("Download paused (%d)" % (n) )
+	          sys.stdout.flush()
+		  n = n + 1
+		print 'Download resumed ...     '
+		print ''
+
+
             self.receive(4)
             filepart_size = ord(self.response[0])*256*256*256+ord(self.response[1])*256*256+ord(self.response[2])*256+ord(self.response[3])
             divider_check = self.receive(3)
@@ -180,7 +192,10 @@ class digicorder_comm:
             if divider_check != '***':
                 print 'Consistency check failed. Download aborted.'
                 break
-            
+            self.bytesdownloaded =  self.bytesdownloaded + filepart_size
+            sys.stdout.write('\r')
+	    sys.stdout.write("%d bytes" %  (self.bytesdownloaded))
+	    sys.stdout.flush()
             download_buffer = self.receive(filepart_size)
             filelist[actual_filetype].write(download_buffer)
                     
@@ -290,7 +305,9 @@ class digicorder_comm:
             timestamp += ord(self.response[2])*256+ord(self.response[3])
             reference_datetime = datetime.datetime(2000, 1, 1, 0, 0, 0)
             
-            date = datetime.datetime.fromtimestamp(int(timestamp)+int(reference_datetime.strftime("%s"))+time.timezone)
+            #date = datetime.datetime.fromtimestamp(int(timestamp)+int(reference_datetime.strftime("%s"))+time.timezone)
+	    date = datetime.datetime.fromtimestamp(int(timestamp)+int(time.mktime(reference_datetime.timetuple()))+time.timezone)
+	    #date = datetime.datetime.fromtimestamp(int(timestamp))
 
             film = filmelement(name, number, type, seenflag, size, date)
             self.filmlist.append(film)

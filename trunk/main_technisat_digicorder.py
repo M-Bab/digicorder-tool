@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-TCP_IP = '192.168.3.2'
-
 from technisat_digicorder_comm import digicorder_comm
 from optparse import OptionParser
 from technisat_digicorder_fileops import *

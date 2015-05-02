@@ -14,9 +14,9 @@ If you have questions don't hesitate to contact me (in English or German)
 Requirements:
 * Python 2.7
 For transcoding
-* ffmpeg (ideally available in system PATH)
-* projectx (ideally available in system PATH)
-* mplex (ideally available in system PATH)
+* ffmpeg (ideally available in system PATH) from https://www.ffmpeg.org/download.html
+* projectx (ideally available in system PATH) from https://sourceforge.net/projects/project-x/
+* mplex (ideally available in system PATH) from https://sourceforge.net/projects/mjpeg/
 
 Installation:
 * Simply unpack it to a preferred destination
@@ -46,7 +46,10 @@ Todo:
 * Delete files on technisat
 
 Changelog:
-0.2.3: Added configuration file
+0.2.4: Applied patch by F. Schwichtenberg. Enables pausing/resume of Technisat download via F9.
+0.2.3: Added configuration file, removed "-newaudio" flag for the recent version of ffmpeg. 
+	If you experience problems with .ts4 conversion now either update your ffmpeg or edit "technisat_digicorder_fileops" 
+	and uncomment the line "#        args += ['-acodec', 'copy', '-newaudio']" and comment out the line "args += ['-acodec', 'copy']".
 0.2.2: Allowed unknown file types for Digicorder S2
 0.2.1: Small bugfixes (Concat error on combining string and numbers)
 0.2: Improved speed and stability by following the protocoll more strictly. Added iso-8859-15 encoding - allows special characters now.
