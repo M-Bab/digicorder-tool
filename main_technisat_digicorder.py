@@ -8,7 +8,7 @@ from subprocess import Popen
 from subprocess import PIPE
 from shlex import split as procsplit
 import tempfile
-import ConfigParser
+import configparser
 
 def main():
     parser = OptionParser(version="%prog 0.2.3", usage="%prog [OPTIONS] [ELEMENT(S)]")
@@ -26,7 +26,7 @@ def main():
     (options, args) = parser.parse_args()
     elements = args
     
-    config = ConfigParser.RawConfigParser()
+    config = configparser.RawConfigParser()
     config.read(construct_maindir_path('options.cfg'))
     
     if (options.cd or options.list or options.get or options.put):
@@ -35,7 +35,7 @@ def main():
         elif(config.get('main', 'TCP_IP')):
             TCP_IP = config.get('main', 'TCP_IP')
         else:
-            print 'No IP-Adress specified in CMD line or config file!'
+            print('No IP-Adress specified in CMD line or config file!')
             exit(-1)
         
         if (config.get('main', 'DEBUG')):
@@ -49,7 +49,7 @@ def main():
         my_digi_comm.cdlist(options.list, options.cd)
         
         if (options.get and options.put):
-            print 'Get and Put are optionally exclusive - either use get to download elements from digicorder or put to upload elements to digicorder'
+            print('Get and Put are optionally exclusive - either use get to download elements from digicorder or put to upload elements to digicorder')
             exit(-1)
         
         if options.get:
@@ -58,7 +58,7 @@ def main():
             for single_element in elements:
                 my_digi_comm.downloadelement(single_element, construct_abs_path(None , options.local_directory))
         if options.put:
-            print 'Upload via put is not yet implemented.'
+            print('Upload via put is not yet implemented.')
             pass
         
         my_digi_comm.disconnect()
@@ -69,7 +69,7 @@ def main():
             sourcefiles = retrieve_sorted_file_list(sourcedir, '*.[tT][sS]4')
             if(sourcefiles):
                 combined_temporary_file = tempfile.NamedTemporaryFile(suffix=".ts4", delete=False)
-                print "Combining files in \"" + os.path.abspath(sourcedir) + "\" to temporary file " + combined_temporary_file.name
+                print("Combining files in \"" + os.path.abspath(sourcedir) + "\" to temporary file " + combined_temporary_file.name)
                 combine_files(sourcefiles, combined_temporary_file)
                 
                 if (config.get('tools', 'FFMPEG_CMD')):
@@ -83,7 +83,7 @@ def main():
 #                print metadata.audio_streams
                 targetfile = os.path.join(sourcedir, (os.path.basename(os.path.abspath(sourcedir)) + ".mkv").replace(" ","_"))
                 ffmpeg_mkv_args = construct_ffmpeg_arguments(combined_temporary_file.name, targetfile, metadata, options.convert_noac3)
-                print "Converting files in \"" + os.path.abspath(sourcedir) + "\" to " + targetfile
+                print("Converting files in \"" + os.path.abspath(sourcedir) + "\" to " + targetfile)
                 (ffmpeg_stdout, ffmpeg_stderr) = xcoder.exec_ffmpeg(ffmpeg_mkv_args)
                 
                 if(os.path.exists(combined_temporary_file.name)):
@@ -95,7 +95,7 @@ def main():
             sourcefiles = retrieve_sorted_file_list(sourcedir, '*.[tT][sS]')
             if(sourcefiles):
                 combined_temporary_file = tempfile.NamedTemporaryFile(suffix=".ts", delete=False)
-                print "Combining files in \"" + os.path.abspath(sourcedir) + "\" to temporary file " + combined_temporary_file.name
+                print("Combining files in \"" + os.path.abspath(sourcedir) + "\" to temporary file " + combined_temporary_file.name)
                 combine_files(sourcefiles, combined_temporary_file)
                 
                 if (config.get('tools', 'PROJECTX_CMD')):
@@ -104,12 +104,12 @@ def main():
                     args = ['projectx', combined_temporary_file.name]
                 try:
                     p = Popen(args, shell=False, stderr=PIPE, stdout=PIPE)
-                    print "Demuxing video file with projectx"
+                    print("Demuxing video file with projectx")
 #                    print " ".join(args)
                     output, errors = p.communicate()
                     p.wait()
                 except OSError:
-                    print "OSError when calling \"projectx\". Ensure \"projectx\" is installed and available in PATH."
+                    print("OSError when calling \"projectx\". Ensure \"projectx\" is installed and available in PATH.")
                     
                 if(os.path.exists(combined_temporary_file.name)):
                     os.remove(combined_temporary_file.name)
@@ -128,15 +128,15 @@ def main():
                     if(options.convert_noac3): mplex_command += ac3_files
                     mplex_command += m2v_files
                     mplex_command += mp2_files
-                    print "Converting files in \"" + os.path.abspath(sourcedir) + "\" to " + targetfile
+                    print("Converting files in \"" + os.path.abspath(sourcedir) + "\" to " + targetfile)
                     try:
                         p = Popen(mplex_command, shell=False, stderr=PIPE, stdout=PIPE)
                         output, errors = p.communicate()
                         p.wait()
                     except OSError:
-                        print "OSError when calling mplex. Ensure mplex is installed and available in PATH."
+                        print("OSError when calling mplex. Ensure mplex is installed and available in PATH.")
                 else:
-                    print "No video data found in TS-files in \"" + os.path.abspath(sourcedir) + "\""
+                    print("No video data found in TS-files in \"" + os.path.abspath(sourcedir) + "\"")
                 
                 for filename in m2v_files:
                     os.remove(filename)   

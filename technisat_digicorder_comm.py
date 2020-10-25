@@ -30,7 +30,7 @@ class digicorder_comm:
         try:
             self.socket.connect((self.tcp_adress, self.tcp_port))
         except:
-            print "Failed to connect to Technisat. Ensure it is switched on, not busy and available under the given ip address: " + self.tcp_adress
+            print("Failed to connect to Technisat. Ensure it is switched on, not busy and available under the given ip address: " + self.tcp_adress)
             sys.exit(-1)
         self.send_ack(1)
         self.send('\x02')
@@ -41,15 +41,15 @@ class digicorder_comm:
         lang = self.receive(lang_count)
         modelname_count = ord(self.receive(1))
         model = self.receive(modelname_count)
-        print 'Connected to model ' + str(model) + ' (language=' + str(lang) + ', version=' + str(version) + ')'
+        print('Connected to model ' + str(model) + ' (language=' + str(lang) + ', version=' + str(version) + ')')
         self.send_ack(0)
     def debugprint(self, pretext, content):
-        print pretext
+        print(pretext)
         index = 0
         for index in range(0, len(content), 15):
             partstring = content[index:index+15]
             hexstring = ' '.join(["%02X"%ord(singlebyte) for singlebyte in partstring])
-            print hexstring + ' | ' + partstring
+            print(hexstring + ' | ' + partstring)
     def disconnect(self):
         self.socket.close()
     def send(self, command):
@@ -68,7 +68,7 @@ class digicorder_comm:
                 self.response += self.socket.recv(maxbuffer)
                 received_bytes = len(self.response)
         except socket.timeout:
-            print "Socket timeout (" + str(self.socket.gettimeout()) + ") while receiving after " + str(received_bytes) + " Bytes!"
+            print("Socket timeout (" + str(self.socket.gettimeout()) + ") while receiving after " + str(received_bytes) + " Bytes!")
         if self.debugging_mode == 1:
             self.debugprint('Received:', self.response)
         return(self.response)
@@ -110,7 +110,7 @@ class digicorder_comm:
         self.reack = ''
         if nbytes == -1:
             retemp = self.send_and_receive('\x01')
-            if retemp <> '\x01':
+            if retemp != '\x01':
                 self.reack += retemp
         else:
             self.reack = self.send_and_receive('\x01', nbytes)
@@ -167,22 +167,22 @@ class digicorder_comm:
         
         # Download!
         self.send('\x01')
-         
+        
         while True:
             actual_filetype = ord(self.receive(1))
             if actual_filetype == 255:
-                print 'Download completed successfully'
+                print('Download completed successfully')
                 break
-	    if actual_filetype == 249:
-		n = 0 
-		while actual_filetype == 249:
-		  actual_filetype = ord(self.receive(1))
-                  sys.stdout.write('\r')
-	          sys.stdout.write("Download paused (%d)" % (n) )
-	          sys.stdout.flush()
-		  n = n + 1
-		print 'Download resumed ...     '
-		print ''
+            if actual_filetype == 249:
+                n = 0 
+                while actual_filetype == 249:
+                    actual_filetype = ord(self.receive(1))
+                    sys.stdout.write('\r')
+                    sys.stdout.write("Download paused (%d)" % (n) )
+                    sys.stdout.flush()
+                    n = n + 1
+                print('Download resumed ...     ')
+                print('')
 
 
             self.receive(4)
@@ -190,12 +190,12 @@ class digicorder_comm:
             divider_check = self.receive(3)
             
             if divider_check != '***':
-                print 'Consistency check failed. Download aborted.'
+                print('Consistency check failed. Download aborted.')
                 break
             self.bytesdownloaded =  self.bytesdownloaded + filepart_size
             sys.stdout.write('\r')
-	    sys.stdout.write("%d bytes" %  (self.bytesdownloaded))
-	    sys.stdout.flush()
+            sys.stdout.write("%d bytes" %  (self.bytesdownloaded))
+            sys.stdout.flush()
             download_buffer = self.receive(filepart_size)
             filelist[actual_filetype].write(download_buffer)
                     
@@ -204,9 +204,9 @@ class digicorder_comm:
         
     def downloadelementtosinglefile(self, filmnumber, filehandle):
         self.downloaddescription = self.send_and_receive('\x05\x00' + chr(int(filmnumber)) + '\x00\x00\x00\x00\x00\x00\x00\x00')
-        print 'Starting download: ' + self.downloaddescription
+        print('Starting download: ' + self.downloaddescription)
         self.send_and_receive_to_file('\x01', filehandle)
-        print 'Download completed!'
+        print('Download completed!')
         self.send_ack()
         return(self.downloaddescription)
     def listrootdirectories(self):
@@ -266,7 +266,7 @@ class digicorder_comm:
                 type = 'MPEG HD'
             else:
                 type = 'Unknown'
-                print "Unknown file type " + str(ord(self.response)) + " at Filmelement " + str(i) 
+                print("Unknown file type " + str(ord(self.response)) + " at Filmelement " + str(i)) 
                 #sys.exit(-1)
             
             self.receive(2)
@@ -281,14 +281,14 @@ class digicorder_comm:
                 seenflag = 1
             else:
                 seenflag = 0
-                print "Unknown seen flag " + str(ord(self.response)) + " at film element " + str(i)
+                print("Unknown seen flag " + str(ord(self.response)) + " at film element " + str(i))
                 #sys.exit(-1)
             
             name = (self.receive(namelength)).decode("iso-8859-15").encode(sys.getfilesystemencoding())
             
             self.receive(3)
             if (ord(self.response[0]) + ord(self.response[1]) + ord(self.response[2]) ) > 0:
-                print "Structure failure at film number " + str(i) + " only zeros expected!"
+                print("Structure failure at film number " + str(i) + " only zeros expected!")
                 sys.exit(-1)
             
             self.receive(3)
@@ -296,7 +296,7 @@ class digicorder_comm:
             
             self.receive(2)
             if (ord(self.response[0]) + ord(self.response[1]) ) > 0:
-                print "Structure failure at film number " + str(i) + " only zeros expected!"
+                print("Structure failure at film number " + str(i) + " only zeros expected!")
                 sys.exit(-1)
             
             # Timestamp corresponds to 1.1.2000 00:00:00 = 946681200 s since 1970
@@ -305,24 +305,22 @@ class digicorder_comm:
             timestamp += ord(self.response[2])*256+ord(self.response[3])
             reference_datetime = datetime.datetime(2000, 1, 1, 0, 0, 0)
             
-            #date = datetime.datetime.fromtimestamp(int(timestamp)+int(reference_datetime.strftime("%s"))+time.timezone)
-	    date = datetime.datetime.fromtimestamp(int(timestamp)+int(time.mktime(reference_datetime.timetuple()))+time.timezone)
-	    #date = datetime.datetime.fromtimestamp(int(timestamp))
+            date = datetime.datetime.fromtimestamp(int(timestamp)+int(time.mktime(reference_datetime.timetuple()))+time.timezone)
 
             film = filmelement(name, number, type, seenflag, size, date)
             self.filmlist.append(film)
             name = ''; number = 0; type = ''; seenflag = 0; size = 0; date = 0; namelength = 0
         return(self.filmlist)
     def printlistelements(self, directoryname):
-        print 'Elements in ' + directoryname
-        print ''
-        print '{0:40} | {1:3} | {2:7} | {3:9} | {4:20}'.format('Name', 'No.', 'Type', 'Size (MB)', 'Date/Time')
+        print('Elements in ' + directoryname)
+        print('')
+        print('{0:40} | {1:3} | {2:7} | {3:9} | {4:20}'.format('Name', 'No.', 'Type', 'Size (MB)', 'Date/Time'))
         for film in self.filmlist:
-            print '{0:40} | {1:3} | {2:7} | {3:9.1f} | {4:20}'.format(film.name, film.number, film.type, film.size, film.date.isoformat(' '))
+            print('{0:40} | {1:3} | {2:7} | {3:9.1f} | {4:20}'.format(film.name, film.number, film.type, film.size, film.date.isoformat(' ')))
     def printrootdirectories(self):
-        print 'Root directories:'
-        print ''
-        print '{0:20} | {1:8}'.format('Name', 'Unknown')
+        print('Root directories:')
+        print('')
+        print('{0:20} | {1:8}'.format('Name', 'Unknown'))
         for singledirectory in self.directorieslist:
-            print '{0:20} | {1:8}'.format(singledirectory.name, singledirectory.unknownint)
+            print('{0:20} | {1:8}'.format(singledirectory.name, singledirectory.unknownint))
         
