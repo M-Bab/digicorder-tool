@@ -33,7 +33,7 @@ def construct_maindir_path(filename):
 def retrieve_sorted_file_list(directory, pattern):
     matched_files = []
     filelist = os.listdir(directory)
-    for single_file in sorted(filelist, cmp=lambda x,y: cmp(x.lower(), y.lower())):
+    for single_file in sorted(filelist, key=str.lower):
         if fnmatch.fnmatch(single_file, pattern):
             matched_files.append(os.path.join(directory, single_file))
     return(matched_files)
@@ -44,7 +44,7 @@ def combine_files(file_list, target_file_handle, buffer_size=1048576):
     for input_file_name in file_list:
         total_file_size += os.path.getsize(input_file_name)
     for input_file_name in file_list:
-        input_file = file(input_file_name,'rb')
+        input_file = open(input_file_name,'rb')
         while True:
             data = input_file.read(buffer_size)
             if not data:
@@ -59,21 +59,10 @@ def combine_files(file_list, target_file_handle, buffer_size=1048576):
 def update_progress(progress):
     if(progress > 1.0):
         progress = 1.0
-    sys.stdout.write('\r[{0:20}] {1}%'.format('#'*(int(progress*100)/5), int(progress*100)))
+    sys.stdout.write('\r[{0:20}] {1}%'.format("".join(('#',)*int(progress*100/5)), int(progress*100)))
     sys.stdout.flush()
 
-def construct_ffmpeg_arguments(inputfilename, outputfilename, metadata, noac3=False):
-    args = ['-y', '-i', inputfilename]
-    args += ['-map']
-    args += [metadata.video_streams[0].stream_id]
-    audiostreams_count = 0
-    for audiostream in metadata.audio_streams:
-        if (not (noac3 and audiostream.codec == 'ac3')):
-            args += ['-map']
-            args += [audiostream.stream_id]
-            audiostreams_count += 1
-    args += ['-f', 'matroska', '-vcodec', 'copy', '-acodec', 'copy', outputfilename]
-    for index_number in range(1, audiostreams_count):
-#        args += ['-acodec', 'copy', '-newaudio'] # Removed newaudio - not required in recent ffmpeg versions
-        args += ['-acodec', 'copy']
+def construct_ffmpeg_arguments(ffmpeg_cmd, inputfilename, outputfilename):
+    args = [ffmpeg_cmd, '-err_detect', 'ignore_err', '-y', '-i', inputfilename]
+    args += ['-map', '0:u', '-map', '-0:s?', '-c', 'copy', '-ignore_unknown', outputfilename]
     return(args)

@@ -12,11 +12,9 @@ and should work with any SD (which is typically a mpeg2 in mpeg-ts container) or
 If you have questions don't hesitate to contact me (in English or German)
 
 Requirements:
-* Python 2.7
+* Python >3.6
 For transcoding
 * ffmpeg (ideally available in system PATH) from https://www.ffmpeg.org/download.html
-* projectx (ideally available in system PATH) from https://sourceforge.net/projects/project-x/
-* mplex (ideally available in system PATH) from https://sourceforge.net/projects/mjpeg/
 
 Installation:
 * Simply unpack it to a preferred destination
@@ -35,10 +33,8 @@ Execute/examples (">" indicates a command line interface):
 	Connects to the digicorder and lists all elements available in the folder "recordings" = Lists all recordings
 * > main_technisat_digicorder.py --get 3 --localdirectory=/home/peter/video
 	Downloads the element ID=3 (you get the ID with the list command above) to the local directory /home/peter/video
-* > main_technisat_digicorder.py --ts4tomkv /home/peter/video/bigbangtheory
-	Transcodes the .ts4 files (HD-video recording) in /home/peter/video/bigbangtheory to an .mkv in the same directory
-* > main_technisat_digicorder.py --tstompg *
-	Wildcard expansion of course also works: This transcodes all .ts files to .mpg files in all subdirectories of your current directory
+* > main_technisat_digicorder.py --convert /home/peter/video/bigbangtheory
+	Transcodes the .ts/.ts4 files (HD-video recording) in /home/peter/video/bigbangtheory to an .mpg/.mkv in the same directory
 
 Todo:
 * More feedback/progress indicators when downloading/transcoding
@@ -46,6 +42,7 @@ Todo:
 * Delete files on technisat
 
 Changelog:
+0.3.0: Switched to Python3. Use only ffmpeg for converting.
 0.2.4: Applied patch by F. Schwichtenberg. Enables pausing/resume of Technisat download via F9.
 0.2.3: Added configuration file, removed "-newaudio" flag for the recent version of ffmpeg. 
 	If you experience problems with .ts4 conversion now either update your ffmpeg or edit "technisat_digicorder_fileops" 
