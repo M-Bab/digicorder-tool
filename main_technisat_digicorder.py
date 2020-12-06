@@ -92,11 +92,13 @@ def main():
                 print("Converting files in \"" + os.path.abspath(sourcedir) + "\" to " + targetfile)
                 try:
                     subprocess.run(ffmpeg_run_args, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, check=True)
-                except subprocess.CalledProcessError as e:
+                except subprocess.CalledProcessError:
                     print("ffmpeg conversion not successful!")
                 
-                if(os.path.exists(combined_temporary_file.name)):
+                try:
                     os.remove(combined_temporary_file.name)
+                except:
+                    pass
             
 if __name__ == "__main__":
     main()
